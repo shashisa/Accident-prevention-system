@@ -1,0 +1,68 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Define LCD (16x2 with I2C)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Define Ultrasonic Sensor Pins
+#define TRIG_PIN 9
+#define ECHO_PIN 10
+
+// Define Motor Fan Control Pin (PWM)
+#define MOTOR_PIN 6 
+
+void setup() {
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO_PIN, INPUT);
+    pinMode(MOTOR_PIN, OUTPUT);
+
+    // Start LCD
+    lcd.begin();
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("Accident Prev.");
+    lcd.setCursor(0, 1);
+    lcd.print("System Ready");
+
+    delay(2000);
+    lcd.clear();
+}
+
+void loop() {
+    long duration;
+    int distance;
+
+    // Trigger Ultrasonic Sensor
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    // Read Echo Signal
+    duration = pulseIn(ECHO_PIN, HIGH);
+    distance = duration * 0.034 / 2;  // Convert to cm
+
+    // Display Distance on LCD
+    lcd.setCursor(0, 0);
+    lcd.print("Distance: ");
+    lcd.print(distance);
+    lcd.print(" cm  ");
+
+    // Adjust Fan Speed Based on Distance
+    if (distance <= 10) {  // Very close -> slowest
+        analogWrite(MOTOR_PIN, 50);  // Slow speed
+        lcd.setCursor(0, 1);
+        lcd.print("Motor: Slow     ");
+    } else if (distance <= 30) {  // Medium range -> medium speed
+        analogWrite(MOTOR_PIN, 120);
+        lcd.setCursor(0, 1);
+        lcd.print("Motor: Medium   ");
+    } else {  // Far -> full speed
+        analogWrite(MOTOR_PIN, 255);  // Full speed
+        lcd.setCursor(0, 1);
+        lcd.print("Motor: Full     ");
+    }
+
+    delay(500);  // Small delay before next reading
+}
